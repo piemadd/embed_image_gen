@@ -1,0 +1,4 @@
+# nixpacks.toml
+
+[phase.start]
+aptPkgs = ['ffmpeg', 'libsm6', 'libxext6']
