@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 
 console.log('starting')
+console.log('version:', process.versions.modules)
 console.log('parent:', fs.readdirSync('./'))
 console.log('modules:', fs.readdirSync('./node_modules'))
 console.log('binaries:', fs.readdirSync('./node_modules/@maplibre/maplibre-gl-native/lib'))

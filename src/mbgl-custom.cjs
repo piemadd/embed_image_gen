@@ -4,7 +4,7 @@
 
 // Shim to wrap req.respond while preserving callback-passing API
 
-var mbgl = require(process.env.MBGL_BINARY_LOCATION ?? '../node_modules/@maplibre/maplibre-gl-native/lib/node-v' + process.versions.modules + '/mbgl');
+var mbgl = require(process.env.MBGL_BINARY_LOCATION ?? './node_modules/@maplibre/maplibre-gl-native/lib/node-v' + process.versions.modules + '/mbgl');
 var constructor = mbgl.Map.prototype.constructor;
 
 var Map = function(options) {
