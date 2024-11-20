@@ -1,4 +1,4 @@
 # nixpacks.toml
 
 [phase.start]
-aptPkgs = ['ffmpeg', 'libsm6', 'libxext6']
+aptPkgs = ['libglx-dev', 'libopengl0', 'libuv1-dev']
