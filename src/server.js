@@ -5,6 +5,8 @@ import mbgl from './mbgl-custom.cjs';
 import sharp from 'sharp';
 import layers from './mapStyle.js';
 
+console.log('binaries:', fs.readdirSync('../node_modules/@maplibre/maplibre-gl-native/lib'))
+
 //setting up server
 const fastify = Fastify({
   logger: false
