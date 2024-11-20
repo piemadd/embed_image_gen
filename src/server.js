@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import Fastify from 'fastify'
 import { transitstatus_agencies } from './feeds.js';
-import mbgl from '@maplibre/maplibre-gl-native';
+import mbgl from './mbgl-custom.cjs';
 import sharp from 'sharp';
 import layers from './mapStyle.js';
 
