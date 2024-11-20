@@ -1,4 +1,4 @@
-# nixpacks.toml
+providers = ['...', 'node']
 
 [phase.setup]
-aptPkgs = ['libglx-dev', 'libopengl0', 'libuv1-dev']
+aptPkgs = ['cur', 'wget', 'libglx-dev', 'libopengl0', 'libuv1-dev']
