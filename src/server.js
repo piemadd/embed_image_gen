@@ -1,11 +1,12 @@
 import fs from 'node:fs';
+
+console.log('binaries:', fs.readdirSync('../node_modules/@maplibre/maplibre-gl-native/lib'))
+
 import Fastify from 'fastify'
 import { transitstatus_agencies } from './feeds.js';
 import mbgl from './mbgl-custom.cjs';
 import sharp from 'sharp';
 import layers from './mapStyle.js';
-
-console.log('binaries:', fs.readdirSync('../node_modules/@maplibre/maplibre-gl-native/lib'))
 
 //setting up server
 const fastify = Fastify({
