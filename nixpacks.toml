@@ -1,4 +1,4 @@
 # nixpacks.toml
 
-[phase.start]
+[phase.setup]
 aptPkgs = ['libglx-dev', 'libopengl0', 'libuv1-dev']
