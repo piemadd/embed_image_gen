@@ -4,7 +4,8 @@ console.log('starting')
 console.log('version:', process.versions.modules)
 console.log('parent:', fs.readdirSync('./'))
 console.log('modules:', fs.readdirSync('./node_modules'))
-console.log('binaries:', fs.readdirSync('./node_modules/@maplibre/maplibre-gl-native/lib'))
+console.log('binary versions:', fs.readdirSync('./node_modules/@maplibre/maplibre-gl-native/lib'))
+console.log('binaries:', fs.readdirSync('./node_modules/@maplibre/maplibre-gl-native/lib/node-v' + process.versions.modules))
 
 /*
 import Fastify from 'fastify'
