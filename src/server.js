@@ -2,10 +2,13 @@ import fs from 'node:fs';
 
 console.log('starting')
 console.log('version:', process.versions.modules)
+console.log('root:', fs.readdirSync('/'))
 console.log('parent:', fs.readdirSync('./'))
 console.log('modules:', fs.readdirSync('./node_modules'))
 console.log('binary versions:', fs.readdirSync('./node_modules/@maplibre/maplibre-gl-native/lib'))
 console.log('binaries:', fs.readdirSync('./node_modules/@maplibre/maplibre-gl-native/lib/node-v' + process.versions.modules))
+
+/*
 
 import Fastify from 'fastify'
 import { transitstatus_agencies } from './feeds.js';
@@ -13,7 +16,7 @@ import mbgl from './mbgl-custom.cjs';
 import sharp from 'sharp';
 import layers from './mapStyle.js';
 
-/*
+
 
 //setting up server
 const fastify = Fastify({
