@@ -1,7 +1,9 @@
 import fs from 'node:fs';
 
+console.log('starting')
 console.log('binaries:', fs.readdirSync('../node_modules/@maplibre/maplibre-gl-native/lib'))
 
+/*
 import Fastify from 'fastify'
 import { transitstatus_agencies } from './feeds.js';
 import mbgl from './mbgl-custom.cjs';
@@ -108,3 +110,4 @@ fastify.listen({ port: process.env.PORT ?? 3000, host: process.env.hostname ?? '
   }
   // Server is now listening on ${address}
 })
+  */
