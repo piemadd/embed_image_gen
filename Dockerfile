@@ -11,7 +11,10 @@ RUN apt-get update && \
         unzip \
         build-essential \
         python3 \
-        libglx-dev libopengl0 libuv1-dev libicu70
+        libglx-dev \
+        libopengl0 \
+        libuv1-dev \ 
+        libicu70
 
 RUN curl -sL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y \
