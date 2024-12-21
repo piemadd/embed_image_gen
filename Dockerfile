@@ -111,4 +111,4 @@ EXPOSE 3000
 
 USER node:node
 
-CMD ls && cd /usr/src/app && Xvfb :99 -nolisten unix & npm run start
+CMD cd /usr/src/app && ls && rm -rf /tmp/.X99-lock && Xvfb :99 -nolisten unix & npm run start
