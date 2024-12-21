@@ -34,8 +34,8 @@ RUN apt-get update && \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*;
 
-RUN wget http://archive.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb
-RUN dpkg -i libicu70_70.1-2_amd64.deb
+#RUN wget http://archive.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb
+#RUN dpkg -i libicu70_70.1-2_amd64.deb
 
 RUN curl -sL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y \
