@@ -1,4 +1,0 @@
-providers = ['...', 'node']
-
-[phase.setup]
-aptPkgs = ['curl', 'wget', 'libglx-dev', 'libopengl0', 'libuv1-dev', 'git', 'unzip', 'build-essential', 'python3']

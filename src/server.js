@@ -1,26 +1,16 @@
 import fs from 'node:fs';
 
-console.log('starting')
-console.log('version:', process.versions.modules)
-console.log('parent:', fs.readdirSync('./'))
-console.log('modules:', fs.readdirSync('./node_modules'))
-console.log('binary versions:', fs.readdirSync('./node_modules/@maplibre/maplibre-gl-native/lib'))
-console.log('binaries:', fs.readdirSync('./node_modules/@maplibre/maplibre-gl-native/lib/node-v' + process.versions.modules))
-
 import Fastify from 'fastify'
 import { transitstatus_agencies } from './feeds.js';
-import mbgl from '@maplibre/maplibre-gl-native';
+
+import {
+  getRenderedFromCoordsBuffer
+} from 'chiitiler';
+
 import sharp from 'sharp';
 import layers from './mapStyle.js';
 
-//setting up server
-const fastify = Fastify({
-  logger: false
-});
-
-//setting up map
-const map = new mbgl.Map();
-map.load({
+const fullMapStyle = {
   zoom: 0,
   pitch: 0,
   center: [41.884579601743276, -87.6279871036212],
@@ -45,6 +35,11 @@ map.load({
   },
   version: 8,
   metadata: {},
+};
+
+//setting up server
+const fastify = Fastify({
+  logger: false
 });
 
 let templates = {};
@@ -67,27 +62,15 @@ fastify.get('/images', (async (req, reply) => {
 
       break;
     case 'arbitrary':
-      const image = await new Promise((resolve, reject) => {
-        map.render({
-          zoom: parseFloat(req.query.zoom ?? 0),
-          width: parseInt(req.query.width && req.query.width > 0 ? req.query.width : 512),
-          height: parseInt(req.query.height && req.query.height > 0 ? req.query.height : 512),
-          center: [parseFloat(req.query.lon ?? 0), parseFloat(req.query.lat ?? 0)],
-          bearing: parseFloat(req.query.bearing ?? 0),
-          pitch: parseFloat(req.query.pitch ?? 0),
-        }, function (err, buffer) {
-          if (err) reject(err);
-
-          const imagePNG = sharp(buffer, {
-            raw: {
-              width: parseInt(req.query.width && req.query.width > 0 ? req.query.width : 512),
-              height: parseInt(req.query.height && req.query.height > 0 ? req.query.height : 512),
-              channels: 4
-            }
-          }).png().toBuffer();
-
-          resolve(imagePNG);
-        });
+      const image = await getRenderedFromCoordsBuffer({
+        stylejson: fullMapStyle,
+        center: [parseFloat(req.query.lon ?? 0), parseFloat(req.query.lat ?? 0)],
+        zoom: parseFloat(req.query.zoom ?? 0),
+        width: Math.min(parseInt(req.query.width && req.query.width > 0 ? req.query.width : 512), 8192),
+        height: Math.min(parseInt(req.query.height && req.query.height > 0 ? req.query.height : 512), 8192),
+        //cache: s3Cache,
+        ext: req.query.format ?? 'png',
+        quality: req.query.quality ?? 80,
       });
 
       //setting headers
