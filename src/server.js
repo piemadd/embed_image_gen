@@ -70,8 +70,8 @@ fastify.get('/images', (async (req, reply) => {
       const image = await new Promise((resolve, reject) => {
         map.render({
           zoom: parseFloat(req.query.zoom ?? 0),
-          width: parseInt(req.query.width && req.query.width > 0 ? req.query.width : 512),
-          height: parseInt(req.query.height && req.query.height > 0 ? req.query.height : 512),
+          width: Math.min(parseInt(req.query.width && req.query.width > 0 ? req.query.width : 512), 8192),
+          height: Math.min(parseInt(req.query.height && req.query.height > 0 ? req.query.height : 512), 8192),
           center: [parseFloat(req.query.lon ?? 0), parseFloat(req.query.lat ?? 0)],
           bearing: parseFloat(req.query.bearing ?? 0),
           pitch: parseFloat(req.query.pitch ?? 0),
@@ -80,8 +80,8 @@ fastify.get('/images', (async (req, reply) => {
 
           const imagePNG = sharp(buffer, {
             raw: {
-              width: parseInt(req.query.width && req.query.width > 0 ? req.query.width : 512),
-              height: parseInt(req.query.height && req.query.height > 0 ? req.query.height : 512),
+              width: Math.min(parseInt(req.query.width && req.query.width > 0 ? req.query.width : 512), 8192),
+              height: Math.min(parseInt(req.query.height && req.query.height > 0 ? req.query.height : 512), 8192),
               channels: 4
             }
           }).png().toBuffer();
