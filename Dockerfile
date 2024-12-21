@@ -113,4 +113,5 @@ USER node:node
 
 WORKDIR /usr/src/app
 
-CMD rm -rf /tmp/.X99-lock && Xvfb :99 -nolisten unix & node /usr/src/app/src/server.js
+#CMD rm -rf /tmp/.X99-lock && Xvfb :99 -nolisten unix & node /usr/src/app/src/server.js
+ENTRYPOINT ["/bin/sh", "-c", "/usr/bin/xvfb-run -a node /usr/src/app/src/server.js $@", ""]
