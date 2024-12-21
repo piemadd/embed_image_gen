@@ -111,4 +111,4 @@ EXPOSE 3000
 
 USER node:node
 
-ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
+CMD ls && cd /usr/src/app && Xvfb :99 -nolisten unix & npm run start
