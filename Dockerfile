@@ -113,4 +113,4 @@ USER node:node
 
 WORKDIR /usr/src/app
 
-CMD npm install && rm -rf /tmp/.X99-lock && Xvfb :99 -nolisten unix & node /usr/src/app/src/server.js
+CMD rm -rf /tmp/.X99-lock && Xvfb :99 -nolisten unix & node /usr/src/app/src/server.js
