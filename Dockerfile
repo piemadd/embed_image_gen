@@ -30,6 +30,9 @@ RUN apt-get update && \
         libcurl4-openssl-dev \
         libpixman-1-dev \
         libpixman-1-0; \
+    apt-get -y --purge autoremove; \
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/*;
 
 RUN wget http://archive.ubuntu.com/ubuntu/pool/main/i/icu/libicu70_70.1-2_amd64.deb
 RUN dpkg -i libicu70_70.1-2_amd64.deb
