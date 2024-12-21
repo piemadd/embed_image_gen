@@ -10,6 +10,7 @@ RUN apt-get update && \
         git \
         unzip \
         build-essential \
+        libpng-dev \
         python3 \
         libglx-dev \
         libopengl0 \
