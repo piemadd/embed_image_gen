@@ -14,17 +14,7 @@ RUN curl -sL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y \
         nodejs
 
-RUN git clone https://github.com/maptiler/tileserver-gl.git /tileserver-gl
+EXPOSE 3000
+ENV PORT 3000
 
-WORKDIR /tileserver-gl
-
-RUN npm install
-RUN npm install -g npm@10.5.0 tileserver-gl
-
-WORKDIR /
-
-EXPOSE 8080
-ENV PORT 8080
-
-RUN npm install
 CMD npm run start
