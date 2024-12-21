@@ -111,4 +111,4 @@ EXPOSE 3000
 
 USER node:node
 
-CMD cd /usr/src/app && ls && rm -rf /tmp/.X99-lock && Xvfb :99 -nolisten unix & npm run start
+CMD cd /usr/src/app && ls && npm install && rm -rf /tmp/.X99-lock && Xvfb :99 -nolisten unix & node ./src/server.js
