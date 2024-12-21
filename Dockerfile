@@ -17,5 +17,4 @@ RUN curl -sL https://deb.nodesource.com/setup_20.x | bash - && \
 EXPOSE 3000
 ENV PORT 3000
 
-RUN ls
-CMD npm run start
+CMD ls && npm run start
