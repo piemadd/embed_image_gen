@@ -311,7 +311,7 @@ fastify.get('/images', (async (req, reply) => {
         40 // extra padding
 
       iconSVG = `
-        <g transform="scale(0.25) translate(${(680 - (calculatedWidth / 2)) * 4},${(315 - 12) * 4})">
+        <g transform="scale(0.25) translate(${(600 - (calculatedWidth / 8)) * 4},${(315 - 12) * 4})">
           <rect
             x='0'
             y='0'
