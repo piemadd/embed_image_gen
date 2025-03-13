@@ -1,10 +1,12 @@
 <svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
   <g id="Frame 12">
     <rect width="1200" height="630" fill="#1D1D1D" />
-    <rect id="map_placeholder" x="420" width="780" height="630" fill="#DD743B" />
+    <image href="IMAGE_GEN_REPLACE_map_image" x="420" y="0" width="780px" height="630px"/>
     <rect id="Rectangle 31" x="32" y="32" width="356" height="566" fill="#444444" />
-    <rect id="Rectangle 32" x="36" y="36" width="348" height="89" fill="IMAGE_GEN_REPLACE_train_color" />
-    <text id="train_title" fill="IMAGE_GEN_REPLACE_train_text_color" xml:space="preserve" style="white-space: pre"
+    <rect id="Rectangle 32" x="36" y="36" width="348" height="89"
+      fill="IMAGE_GEN_REPLACE_train_color" />
+    <text id="train_title" fill="IMAGE_GEN_REPLACE_train_text_color" xml:space="preserve"
+      style="white-space: pre"
       font-family="monospace" font-size="24" font-weight="bold"
       letter-spacing="0em"><tspan x="41" y="58.92">IMAGE_GEN_REPLACE_train_title</tspan></text>
   </g>
