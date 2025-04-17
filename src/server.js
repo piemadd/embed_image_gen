@@ -240,6 +240,8 @@ fastify.get('/images', (async (req, reply) => {
         return;
       }
 
+      itemData = stationData[markerID];
+
       mapLat = stationData[markerID].lat;
       mapLon = stationData[markerID].lon;
       mapZoom = 12;
@@ -295,23 +297,25 @@ fastify.get('/images', (async (req, reply) => {
       style="white-space: pre"
       font-family="monospace" font-size="36" font-weight="bold" dominant-baseline="middle"
       text-anchor="middle"
-      letter-spacing="0em" x="600" y="360">${markerID}</text>
+      letter-spacing="0em" x="600" y="360">${itemData.name} (${markerID})</text>
     <text id="station_code_outline" fill="white" xml:space="preserve"
       style="white-space: pre;fill:none;fill-opacity:1;stroke:#000000;stroke-width:2px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;"
       font-family="monospace" font-size="36" font-weight="bold" dominant-baseline="middle"
       text-anchor="middle"
-      letter-spacing="0em" x="600" y="360">${markerID}</text>`
+      letter-spacing="0em" x="600" y="360">${itemData.name} (${markerID})</text>`
+      iconSVG = '<circle cx="600" cy="315" r="8" stroke="black" stroke-width="2" fill="white" />'
     }
 
     if (markerType == 'train') {
+
       const calculatedWidth =
-        72 + // first letter length + parenthesis (24px per character)
+        24 + // first letter length
         itemData.trainNumRaw.toString().length * 36 + // train number length
-        itemData.trainID.split('-')[1].length * 24 + // train date length (second part of id),
+        (!itemData.onlyOfTrainNum ? (itemData.trainID.split('-')[1].length * 24) + 48 : 0) + // train date length (second part of id) + parenthesis (24px per char),
         40 // extra padding
 
       iconSVG = `
-        <g transform="scale(0.25) translate(${(600 - (calculatedWidth / 8)) * 4},${(315 - 12) * 4})">
+        <g transform="scale(0.5) translate(${(600 - (calculatedWidth / 4)) * 2},${(315 - 24) * 2})">
           <rect
             x='0'
             y='0'
@@ -328,7 +332,7 @@ fastify.get('/images', (async (req, reply) => {
             rx='10'
             fill='${itemData.iconColor}'
           />
-          <text x="${calculatedWidth / 2}" y="68" fill="white" xml:space="preserve" style="white-space: pre" font-family="monospace" font-size="60" letter-spacing="0em" text-anchor="middle"><tspan font-size="40">${itemData.providerShort.substring(0, 1)}</tspan>${itemData.trainNumRaw}<tspan font-size="40">(${itemData.trainID.split('-')[1]})</tspan></text>
+          <text x="${calculatedWidth / 2}" y="68" fill="white" xml:space="preserve" style="white-space: pre" font-family="monospace" font-size="60" letter-spacing="0em" text-anchor="middle"><tspan font-size="40">${itemData.providerShort.substring(0, 1)}</tspan>${itemData.trainNumRaw}${!itemData.onlyOfTrainNum ? `<tspan font-size="40">(${itemData.trainID.split('-')[1]})</tspan>` : ''}</text>
           </g>`
     }
 
