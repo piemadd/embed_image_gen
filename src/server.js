@@ -10,7 +10,16 @@ const fastify = Fastify({
   logger: false
 });
 
+let imageRenderMeta = {
+  arbitrary: {},
+  amtraker: {
+    train: {},
+    station: {},
+  },
+  transitstatus: {},
+};
 let downloadedShapes = {};
+let downloadedShapesTimes = {};
 
 const renderImage = (map, width, height, zoom, lon, lat, bearing, pitch) => {
   return new Promise((resolve, reject) => {
@@ -62,10 +71,12 @@ const addIcon = async (fill, border, arrow = true) => {
 
 //adding the geojson lines
 const addLines = async (map, feed, lineID = null) => {
-  if (!downloadedShapes[feed]) { // we need to load everything 
+  const now = new Date();
+  if (!downloadedShapes[feed] || now.valueOf() > downloadedShapesTimes[feed] + (1000 * 60 * 60 * 24)) { // we need to load everything 
 
     const mapShapesData = await Promise.all(transitstatus_agencies[feed].mapShapes.map(url => fetch(url).then(res => res.json())));
     downloadedShapes[feed] = mapShapesData.flatMap((featureCollection) => featureCollection.features);
+    downloadedShapesTimes[feed] = now.valueOf();
   };
 
   map.addSource(`${feed}_shapes`, {
@@ -115,8 +126,12 @@ const addLines = async (map, feed, lineID = null) => {
 };
 
 fastify.get('/', (async (req, reply) => {
-  reply.send(':3')
+  reply.send(':3\n\nsee /meta for image info')
 }));
+
+fastify.get('/meta', (async (req, reply) => {
+  reply.send(imageRenderMeta)
+}))
 
 fastify.get('/images', (async (req, reply) => {
   //setting up map
@@ -347,13 +362,21 @@ fastify.get('/images', (async (req, reply) => {
       .png()
       .toBuffer();
 
+    if (!imageRenderMeta['amtraker'][markerType][markerID]) {
+      imageRenderMeta.amtraker[markerType][markerID] = {
+        time: Date.now(),
+        renderCount: 0,
+      }
+    }
+
+    imageRenderMeta.amtraker[markerType][markerID]['renderCount'] += 1;
+
     //setting headers and returning image
     reply.header('Content-Type', 'image/png');
     reply.header('Pragma', 'public');
     reply.header('Cache-Control', 'max-age=86400');
     reply.send(svgImage);
     return;
-
   }
 
   if (req.query.service == 'arbitrary') {
