@@ -5,9 +5,50 @@ import mbgl from '@maplibre/maplibre-gl-native';
 import sharp from 'sharp';
 import mapsStyle from './mapStyle.js';
 
+
+const calculateZoomLevel = (minLat, maxLat, minLon, maxLon, mapWidth, mapHeight) => {
+  const TILE_SIZE = 512;
+  const MAX_ZOOM = 18;
+
+  const latToMercatorY = (latitude) => {
+    const latRad = latitude * (Math.PI / 180);
+    return Math.log(Math.tan(Math.PI / 4 + latRad / 2));
+  }
+
+  // Calculate the longitudinal span in degrees
+  let lonSpan = maxLon - minLon;
+  if (lonSpan < 0) { // Handle cases where the bounding box crosses the anti-meridian
+    lonSpan += 360;
+  }
+
+  // Calculate the latitudinal span in mercator Y units
+  const mercatorYMin = latToMercatorY(minLat);
+  const mercatorYMax = latToMercatorY(maxLat);
+  const mercatorYSpan = Math.abs(mercatorYMax - mercatorYMin);
+
+  // Iterate through zoom levels to find the appropriate one
+  for (let zoom = MAX_ZOOM; zoom >= 0; zoom -= 0.1) {
+    const scale = 1 << zoom; // 2^zoom
+    const pixelsPerLonDegree = TILE_SIZE * scale / 360;
+    const pixelsPerMercatorYUnit = TILE_SIZE * scale / (2 * Math.PI); // Calculated from the conversion formulas
+
+    const requiredWidth = 0;//(lonSpan * pixelsPerLonDegree) + 600;
+    const requiredHeight = (mercatorYSpan * pixelsPerMercatorYUnit) + 256; // magic
+
+    if (requiredWidth <= mapWidth && requiredHeight <= mapHeight) {
+      return zoom - 0.1;
+    }
+  }
+
+  return 0; // If no zoom level fits, return the lowest (entire earth in one tile)
+}
+
+
+
 //setting up server
 const fastify = Fastify({
-  logger: false
+  logger: false,
+
 });
 
 let imageRenderMeta = {
@@ -17,6 +58,7 @@ let imageRenderMeta = {
     station: {},
   },
   transitstatus: {},
+  subwayBuilderPatcher: {},
 };
 let downloadedShapes = {};
 let downloadedShapesTimes = {};
@@ -125,6 +167,59 @@ const addLines = async (map, feed, lineID = null) => {
   });
 };
 
+//adding the geojson points
+const addPoints = async (map, feed, points) => {
+  map.addSource(`${feed}_points`, {
+    type: "geojson",
+    data: {
+      type: "FeatureCollection",
+      features: points.map((point) => {
+        return {
+          "type": "Feature",
+          "properties": {},
+          "geometry": {
+            "coordinates": [
+              point.lon, // lon
+              point.lat, // lat
+            ],
+            "type": "Point"
+          }
+        }
+      })
+    },
+  });
+
+  /*
+  map.addLayer({
+    id: `${feed}-shapes-under`,
+    type: "line",
+    source: `${feed}_shapes`,
+    layout: {
+      "line-join": "round",
+      "line-cap": "round",
+      "line-round-limit": 0.1,
+    },
+    paint: {
+      "line-color": "#222222",
+      "line-opacity": 1,
+      "line-width": 4,
+    },
+  });
+  */
+
+  map.addLayer({
+    id: `${feed}-points`,
+    type: "circle",
+    source: `${feed}_points`,
+    paint: {
+      "circle-radius": 2,
+      "circle-color": "#fff",
+      "circle-stroke-color": "#000",
+      "circle-stroke-width": 1,
+    },
+  });
+};
+
 fastify.get('/', (async (req, reply) => {
   reply.send(':3\n\nsee /meta for image info')
 }));
@@ -148,10 +243,10 @@ fastify.get('/images', (async (req, reply) => {
       protomaps: {
         type: "vector",
         tiles: [
-          "https://v4mapa.amtraker.com/20250127/{z}/{x}/{y}.mvt",
-          "https://v4mapb.amtraker.com/20250127/{z}/{x}/{y}.mvt",
-          "https://v4mapc.amtraker.com/20250127/{z}/{x}/{y}.mvt",
-          "https://v4mapd.amtraker.com/20250127/{z}/{x}/{y}.mvt",
+          "https://v4mapa.amtraker.com/20251018/{z}/{x}/{y}.mvt",
+          "https://v4mapb.amtraker.com/20251018/{z}/{x}/{y}.mvt",
+          "https://v4mapc.amtraker.com/20251018/{z}/{x}/{y}.mvt",
+          "https://v4mapd.amtraker.com/20251018/{z}/{x}/{y}.mvt",
         ],
         maxzoom: 15,
         attribution:
@@ -164,6 +259,10 @@ fastify.get('/images', (async (req, reply) => {
 
   if (req.query.service == 'transitstatus') {
     const feed = req.query.agency ? transitstatus_agencies[req.query.agency] : null;
+    const markerType = req.query.type;
+    const markerID = req.query.code;
+
+    console.log(req.query.agency, markerType, markerID);
 
     if (!feed) {
       reply.status(418);
@@ -174,17 +273,97 @@ fastify.get('/images', (async (req, reply) => {
     let icons = [];
     let stations = [];
 
-    let finalSVG = templates['transitstatus'];
+    let finalSVG = templates['amtraker'];
 
-    await addLines(map, req.query.agency);
+    let mapLat = null;
+    let mapLon = null;
+    let mapZoom = null;
+    let itemData = {};
+
+    if (markerType == 'station') {
+      await addLines(map, req.query.agency);
+      const stationData = await fetch(`${feed.endpoint}/stations/${markerID}`).then((res) => res.json());
+
+      if (stationData === 'Not found') {
+        reply.status(418);
+        reply.send('Invalid station \'code\' provided.');
+        return;
+      }
+
+      itemData = stationData;
+
+      mapLat = stationData.lat;
+      mapLon = stationData.lon;
+      mapZoom = 12;
+    }
+
+    if (markerType == 'train' || markerType == 'line' || !markerType) {
+      const feedData = await fetch(`${feed.endpoint}`).then((res) => res.json());
+
+      //error handling
+      if (feedData === 'Not found') {
+        reply.status(500);
+        reply.send('Error fetching data related to feed.');
+        return;
+      }
+
+      if (markerType == 'train' && !feedData.trains[markerID]) {
+        reply.status(418);
+        reply.send('Invalid train \'code\' provided.');
+      }
+
+      if (markerType == 'line' && !feedData.lines[markerID]) {
+        reply.status(418);
+        reply.send('Invalid line \'code\' provided.');
+      }
+
+
+      let lineCode = null;
+      let stationsToFilterBy = [];
+
+      // getting the line code to use
+      if (markerType == 'line') lineCode = markerID;
+      else if (markerType == 'train') lineCode = feedData.trains[markerID].lineCode;
+
+      await addLines(map, req.query.agency, lineCode);
+
+      // getting the sttaions to filter by
+      if (markerType && feedData.lines[lineCode]) stationsToFilterBy = feedData.lines[lineCode].stations.map((stationID) => feedData.stations[stationID]);
+      else stationsToFilterBy = Object.values(feedData.stations);
+
+      await addPoints(map, req.query.agency, stationsToFilterBy);
+
+      let minLat = 9999;
+      let maxLat = -999;
+      let minLon = 9999;
+      let maxLon = -999;
+
+      stationsToFilterBy.forEach((station) => {
+        if (station.lat != 0 && station.lon != 0) {
+          if (station.lat < minLat) minLat = station.lat;
+          if (station.lat > maxLat) maxLat = station.lat;
+          if (station.lon < minLon) minLon = station.lon;
+          if (station.lon > maxLon) maxLon = station.lon;
+        }
+      });
+
+      const middleLat = (minLat + maxLat) / 2;
+      const middleLon = (minLon + maxLon) / 2;
+
+      const calculatedZoom = calculateZoomLevel(minLat, maxLat, minLon, maxLon, 1200, 630);
+
+      mapLat = middleLat;
+      mapLon = middleLon;
+      mapZoom = feed.mapDefault[2] ?? calculatedZoom ?? feed.mapDefault[2];
+    }
 
     const transitstatusImage = await renderImage(
       map, // map object
-      780, // width
+      1200, // width
       630, // height
-      feed.mapDefault[2], // zoom
-      feed.mapDefault[1], // lon
-      feed.mapDefault[0], // lat
+      mapZoom ?? feed.mapDefault[2], // zoom
+      mapLon ?? feed.mapDefault[1], // lon
+      mapLat ?? feed.mapDefault[0], // lat
       0, //bearing
       0, //pitch
     );
@@ -194,19 +373,26 @@ fastify.get('/images', (async (req, reply) => {
       'IMAGE_GEN_REPLACE_map_image',
       `data:image/png;base64,${transitstatusImage.toString('base64')}`
     );
-    finalSVG = finalSVG.replace('IMAGE_GEN_REPLACE_train_title', req.query.runNumber ?? 'Trip Not Found :c');
-    finalSVG = finalSVG.replace('IMAGE_GEN_REPLACE_train_text_color', '#000000');
-    finalSVG = finalSVG.replace('IMAGE_GEN_REPLACE_train_color', '#FE8D81');
+    //finalSVG = finalSVG.replace('IMAGE_GEN_REPLACE_train_title', req.query.runNumber ?? 'Trip Not Found :c');
+    //finalSVG = finalSVG.replace('IMAGE_GEN_REPLACE_train_text_color', '#000000');
+    //finalSVG = finalSVG.replace('IMAGE_GEN_REPLACE_train_color', '#FE8D81');
+
+    let iconSVG = '';
+
+    if (markerType == 'station') {
+      iconSVG = '<circle cx="600" cy="315" r="8" stroke="black" stroke-width="2" fill="white" />'
+    }
+
+    //adding map image
+    finalSVG = finalSVG.replace(
+      'IMAGE_GEN_REPLACE_map_image',
+      `data:image/png;base64,${transitstatusImage.toString('base64')}`
+    );
+    finalSVG = finalSVG.replaceAll('IMAGE_GEN_REPLACE_icon', iconSVG);
 
     const svgImage = await sharp(Buffer.from(finalSVG))
       .png()
       .toBuffer();
-
-    //removing layers
-    map.removeLayer(`${feed}-shapes-under`);
-    map.removeLayer(`${feed}-shapes`);
-    map.removeLayer(`${feed}-icons`);
-    map.removeLayer(`${feed}-stations`);
 
     //setting headers and returning image
     reply.header('Content-Type', 'image/png');
@@ -246,8 +432,7 @@ fastify.get('/images', (async (req, reply) => {
     let itemData = {};
 
     if (markerType == 'station') {
-      const stationRes = await fetch(`https://api.amtraker.com/v3/stations/${markerID}`);
-      const stationData = await stationRes.json();
+      const stationData = await fetch(`https://api.amtraker.com/v3/stations/${markerID}`).then((res) => res.json());
 
       if (Array.isArray(stationData) && stationData.length == 0) {
         reply.status(418);
@@ -263,8 +448,7 @@ fastify.get('/images', (async (req, reply) => {
     }
 
     if (markerType == 'train') {
-      const trainRes = await fetch(`https://api.amtraker.com/v3/trains/${markerID}`);
-      const trainData = await trainRes.json();
+      const trainData = await fetch(`https://api.amtraker.com/v3/trains/${markerID}`).then((res) => res.json());
 
       const trainNum = markerID.split('-')[0];
 
@@ -379,6 +563,26 @@ fastify.get('/images', (async (req, reply) => {
     return;
   }
 
+  if (req.query.service == 'sbp') {
+    const arbitraryImage = await renderImage(
+      map,
+      req.query.width,
+      req.query.height,
+      req.query.zoom,
+      req.query.lon,
+      req.query.lat,
+      req.query.bearing,
+      req.query.pitch,
+    );
+
+    //setting headers and returning image
+    reply.header('Content-Type', 'image/png');
+    reply.header('Pragma', 'public');
+    reply.header('Cache-Control', 'max-age=86400');
+    reply.send(arbitraryImage);
+    return;
+  }
+
   if (req.query.service == 'arbitrary') {
     const arbitraryImage = await renderImage(
       map,
@@ -398,6 +602,7 @@ fastify.get('/images', (async (req, reply) => {
     reply.send(arbitraryImage);
     return;
   }
+
   reply.status(418);
   reply.send('Invalid \'service\' provided.');
   return;

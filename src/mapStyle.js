@@ -6,7 +6,7 @@ const mapsStyle = {
   "sources": {
     "protomaps": {
       "type": "vector",
-      "url": "https://v4map.amtraker.com/20250127.json"
+      "url": "https://v4map.amtraker.com/20251018.json"
     }
   },
   "sprite": "https://basemaps-assets.amtraker.com/sprites/v4/dark",
